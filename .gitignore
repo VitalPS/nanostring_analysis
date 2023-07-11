@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-patients.csv
-raw_data.xlsx
+input
+output

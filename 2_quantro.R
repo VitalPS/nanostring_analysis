@@ -1,8 +1,9 @@
 
+
 ## STEP 1. READ RAW DATA AND CONVERT IT TO LOG2
 
-raw_data <- read.xls.RCC("raw_data.xlsx",
-               sheet = 1)
+raw_data <- read.xls.RCC("input/raw_data.xlsx",
+                         sheet = 1)
 # Loading the .xlsx raw data obtained pos processing into nSolver
 
 # OBS.: The raw_data.xlsx MUST HAVE before gene names (line 16 - before POS_A gene)
@@ -13,66 +14,95 @@ raw_data <- read.xls.RCC("raw_data.xlsx",
 
 
 quantro_data <- raw_data %>%
-  `[[`("x") %>% # Extracting gene count from 'rawdata' list as a dataframe named 'data'
-  `row.names<-`(.$Name) %>% # Naming each record (observation)
-  filter(Code.Class == "Endogenous") %>% # Excluding non-endogenous genes from the dataset
-  select(-c(1:3)) %>% # excluding extra info from the dataset
-  log2() %>% # converting expression values into log2
-  as.matrix() # converting data frame to matrix 
+  `[[`("x") %>%
+  `row.names<-`(.$Name) %>%
+  filter(Code.Class == "Endogenous") %>%
+  select(-c(1:3)) %>%
+  log2() %>%
+  as.matrix()
 
 
 
 ## STEP 2. LER TRAITS E CRIAR VETOR
 
-traits <- read.xlsx("../raw_data/PerfilDosPacientes.xlsx")
+raw_patients_traits <- read.xlsx("input/patients.xlsx")
 
-traits_final <- traits %>% 
+patients_traits <- raw_patients_traits %>%
   select(resposta_ao_tratamento) %>%
   mutate(
     response = case_when(
       resposta_ao_tratamento %in% c(1, 2, 3, 5) ~ "responder",
-      resposta_ao_tratamento %in% c(4) ~ "non_responder")) %>%
-  select(- resposta_ao_tratamento) %>%
-  `row.names<-`(traits$record_id)
-
-
-# boxplot
-png(filename = "boxplot_quantro.png",
-    width = 1800,
-    height = 600)
-matboxplot(quantro_data,
-           groupFactor = designs$group,
-           ylab = "Log2 raw counts")
-dev.off()
-
-
-#### conferir cores da legenda no boxplot
-# plot da densidade
-png(filename = "matdensity_quantro.png",
-    width = 800,
-    height = 800)
-matdensity(
-  quantro_data,
-  groupFactor = designs$group,
-  xlab = "Log2 raw counts",
-  ylab = "Density"
-)
-#legend('topright', c("", ""), col = c(1,2,3,4,5), lty = 1, lwd = 3)
-dev.off()
+      resposta_ao_tratamento %in% c(4) ~ "non_responder"
+    )
+  ) %>%
+  select(-resposta_ao_tratamento) %>%
+  `row.names<-`(raw_patients_traits$record_id)
 
 
 
-###
+# STEP 3. CREATE BOXPLOT FROM RAW DATA
+
+writing_boxplot <-
+  function() {
+    #### conferir cores da legenda no boxplot
+    png(filename = "output/boxplot_quantro.png",
+        width = 1800,
+        height = 600)
+    matboxplot(quantro_data,
+               groupFactor = patients_traits$response,
+               ylab = "Log2 raw counts")
+    dev.off()
+  }
+
+if (file.exists("output")) {
+  writing_boxplot()
+  
+} else {
+  dir.create("output")
+  writing_boxplot()
+}
+
+
+
+# STEP 4. CREATE DENSITY PLOT FROM RAW DATA
+
+writing_density_plot <- function() {
+  png(filename = "output/matdensity_quantro.png",
+      width = 800,
+      height = 800)
+  matdensity(
+    quantro_data,
+    groupFactor = patients_traits$response,
+    xlab = "Log2 raw counts",
+    ylab = "Density"
+  )
+  #legend('topright', c("", ""), col = c(1,2,3,4,5), lty = 1, lwd = 3)
+  dev.off()
+}
+
+
+if (file.exists("output")) {
+  writing_density_plot()
+  
+} else {
+  dir.create("output")
+  writing_density_plot()
+}
+
+
+
+
+# STEP 5. PERFORM STATISTICAL ANALYSIS
+
 qtest <- quantro(quantro_data,
-                 groupFactor = traits_final$response)
+                 groupFactor = patients_traits$response)
 qtest
 anova(qtest)
 
 
 qtestPerm <- quantro(quantro_data,
-                     groupFactor = traits_final$response, B = 1000)
+                     groupFactor = patients_traits$response, B = 1000)
 qtestPerm
-
-
 quantroPlot(qtestPerm)
+
 dev.off()
