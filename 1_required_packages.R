@@ -5,11 +5,16 @@
 packages <- c(
   "NanoStringNorm",
   "quantro",
-  "openxlsx",
-  "doParallel",
+  "NormqPCR",
+  
   "tidyverse",
-  "fastDummies",
+  "ggpubr",
   "WriteXLS",
+  "openxlsx",
+  
+  "fastDummies",
+  "doParallel",
+  
   "NACHO"
 )
 

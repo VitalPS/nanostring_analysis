@@ -1,29 +1,11 @@
 
-### PERFORMING GENORM ANALYSIS 
-
-rm(list = ls())
-
-# Openning required packages
-lapply(
-  c(
-    "NanoStringNorm",
-    "openxlsx",
-    "NormqPCR",
-    "dplyr",
-    "ggplot2",
-    "ggpubr",
-    "WriteXLS"
-  ),
-  library,
-  character.only = T,
-  logical.return = T
-)
+### PERFORMING GENORM ANALYSIS
 
 
 ## STEP 1. EXTRACTING AND PROCESSING RAW DATA
 
 ## Ler arquivo xlsx
-raw_data <- read.xls.RCC("../raw_data/raw_data.xlsx",
+raw_data <- read.xls.RCC("input/raw_data.xlsx",
                          sheet = 1)
 
 # Extracting gene count from 'rawdata' list as a dataframe named 'data'
@@ -82,28 +64,39 @@ genorm_variation <- genorm_variation %>%
   mutate(selection = case_when(row_id >= position_min_variation ~ "selected",
                                .default =  "unselected",)) %>%
   mutate(pairing = factor(row.names(.),
-                        levels = unique(rownames(genorm_variation))))
+                          levels = unique(rownames(genorm_variation))))
 
 
-png("dot_chart_genorm.png", height = 300, width = 400)
+writing_dotplot_variation <- function() {
+  png("output/dot_chart_genorm.png", 
+      height = 300, 
+      width = 400)
+  
+  ggplot(genorm_variation,
+         aes(pairing,
+             variation)) +
+    geom_point(aes(color = selection),
+               position = position_dodge(0.3),
+               size = 3) +
+    # scale_x_discrete(name = "",
+    #                  breaks=c(first,min,last)) +
+    labs(color = "") +
+    xlab("Names") +
+    ylab("Pairwise variation") +
+    scale_color_manual(values = c("unselected" = "red",
+                                  "selected" = "blue")) +
+    theme_pubclean()
+  
+  dev.off()
+}
 
-ggplot(genorm_variation,
-       aes(pairing,
-           variation)) +
-  geom_point(aes(color = selection),
-             position = position_dodge(0.3),
-             size = 3) +
-  # scale_x_discrete(name = "",
-  #                  breaks=c(first,min,last)) +
-  labs(color = "") +
-  xlab("Names") +
-  ylab("Pairwise variation") +
-  scale_color_manual(values = c("unselected" = "red",
-                                "selected" = "blue")) +
-  theme_pubclean()
-
-dev.off()
-
+if (file.exists("output")) {
+  writing_dotplot_variation()
+  
+} else {
+  dir.create("output")
+  writing_dotplot_variation()
+}
 
 
 ## STEP 4. GENERATING TABLES WITH HOUSEKEEPING GENES
@@ -114,15 +107,25 @@ all_housekeeping_genes <- genorm_ranking %>%
     selection = case_when(row_id %in% genorm_variation$row_id ~ "selected",
                           .default = "unselected",)
   ) %>%
-  select(-row_id)
+  dplyr::select(-row_id)
 
 
-WriteXLS(
-  all_housekeeping_genes,
-  "all_housekeeping.xlsx",
-  col.names = T,
-  row.names = F
-)
+writing_hk_table <- function() {
+  WriteXLS(
+    all_housekeeping_genes,
+    "output/all_housekeepings.xlsx",
+    col.names = T,
+    row.names = F
+  )
+}
+
+if (file.exists("output")) {
+  writing_hk_table()
+  
+} else {
+  dir.create("output")
+  writing_hk_table()
+}
 
 
 
@@ -131,9 +134,19 @@ unselected_housekeeping_genes <- all_housekeeping_genes %>%
   filter(selection == "unselected")
 
 
-WriteXLS(
-  unselected_housekeeping_genes,
-  "unselected_housekeeping.xlsx",
-  col.names = T,
-  row.names = F
-)
+writing_unselected_hk_table <- function() {
+  WriteXLS(
+    unselected_housekeeping_genes,
+    "output/unselected_housekeepings.xlsx",
+    col.names = T,
+    row.names = F
+  )
+}
+
+if (file.exists("output")) {
+  writing_unselected_hk_table()
+  
+} else {
+  dir.create("output")
+  writing_unselected_hk_table()
+}
