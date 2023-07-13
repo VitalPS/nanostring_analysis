@@ -1,44 +1,45 @@
 # BUIDING TABLE WITH BATCH TRAITS
 
-raw_data <- read.xls.RCC("input/raw_data.xlsx",
+ncounter_raw_data <- read.xls.RCC("input/raw_data.xlsx",
                          sheet = 1)
 
-y <- raw_data$header
 
-batch_traits <- y %>%
+sample_names <- ncounter_raw_data %>%
+  `[[`("x") %>%
+  dplyr::select(-c(1:3)) %>%
+  colnames()
+
+
+batch_traits <- ncounter_raw_data %>%
+  `[[`("header") %>%
   t(.) %>%
   as.data.frame() %>%
-  select("file.name", "sample.id") %>%
-  rename(c("cartridge" = "file.name", "ID" = "sample.id")) %>%
+  dplyr::select("file.name") %>%
+  rename(c("cartridge" = "file.name")) %>%
   mutate(cartridge = stringr::str_extract(.$cartridge, "C\\d{1,}")) %>% # change this line of code depending on the cartridge name
   dummy_cols(
     select_columns = c("cartridge"),
     remove_first_dummy = F,
     remove_selected_columns = T
   ) %>%
-  mutate_at(vars(-("ID")),
-            ~ recode(.,
-                     "0" = 1,
-                     "1" = 2))
+  `rownames<-`(sample_names) %>%
+  mutate_all( ~ recode(.,
+                       "0" = 1,
+                       "1" = 2))
+  
 
 
 
 # Creating XLSX file
 
-writing_xlsx <- function() {
+writing_batch_traits_table <- function(){
   WriteXLS(
     batch_traits,
     "output/batch_traits.xlsx",
     col.names = T,
-    row.names = F
+    row.names = T
   )
 }
 
+output_directory_check(writing_batch_traits_table())
 
-if (file.exists("output")) {
-  writing_xlsx()
-  
-} else {
-  dir.create("output")
-  writing_xlsx()
-}

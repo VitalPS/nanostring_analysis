@@ -5,25 +5,25 @@
 ## STEP 1. EXTRACTING AND PROCESSING RAW DATA
 
 ## Ler arquivo xlsx
-raw_data <- read.xls.RCC("input/raw_data.xlsx",
+ncounter_raw_data <- read.xls.RCC("input/raw_data.xlsx",
                          sheet = 1)
 
-# Extracting gene count from 'rawdata' list as a dataframe named 'data'
-data <- raw_data %>%
+ncounter_data <- ncounter_raw_data %>%
   `[[`("x") %>%
   `row.names<-`(.$Name)
 
-controls_data <- data %>%
+controls_data <- ncounter_data %>%
   filter(Code.Class %in% c("Positive", "Negative")) %>%
   dplyr::select(-c(1:3))
 
-endogenous_data <- data %>%
+endogenous_data <- ncounter_data %>%
   filter(Code.Class %in% c("Endogenous")) %>%
   dplyr::select(-c(1:3))
 
-housekeeping_data <- data %>%
+housekeeping_data <- ncounter_data %>%
   filter(Code.Class %in% c("Housekeeping")) %>%
   dplyr::select(-c(1:3))
+
 
 
 
@@ -90,13 +90,9 @@ writing_dotplot_variation <- function() {
   dev.off()
 }
 
-if (file.exists("output")) {
-  writing_dotplot_variation()
-  
-} else {
-  dir.create("output")
-  writing_dotplot_variation()
-}
+output_directory_check(writing_dotplot_variation())
+
+
 
 
 ## STEP 4. GENERATING TABLES WITH HOUSEKEEPING GENES
@@ -119,13 +115,7 @@ writing_hk_table <- function() {
   )
 }
 
-if (file.exists("output")) {
-  writing_hk_table()
-  
-} else {
-  dir.create("output")
-  writing_hk_table()
-}
+output_directory_check(writing_hk_table())
 
 
 
@@ -143,10 +133,4 @@ writing_unselected_hk_table <- function() {
   )
 }
 
-if (file.exists("output")) {
-  writing_unselected_hk_table()
-  
-} else {
-  dir.create("output")
-  writing_unselected_hk_table()
-}
+output_directory_check(writing_unselected_hk_table())
