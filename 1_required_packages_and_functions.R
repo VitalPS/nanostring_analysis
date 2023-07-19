@@ -1,5 +1,4 @@
 
-
 ## CALLING REQUIRED PACKAGES
 
 packages <- c(
@@ -19,33 +18,40 @@ packages <- c(
   "NACHO"
 )
 
-if (!require("BiocManager", quietly = TRUE))
+packages_setup <- function() {
+  if (sum(as.numeric(!packages %in% installed.packages())) != 0) {
+    vector_unistalled_packages <- packages[packages %in% installed.packages()]
+    for (i in 1:length(vector_unistalled_packages )) {
+      BiocManager::install(vector_unistalled_packages , dependencies = T)
+      break()
+    }
+    sapply(packages, require, character = T)
+  } else {
+    sapply(packages, require, character = T)
+  }
+}
+
+if (!require("BiocManager", quietly = TRUE)) {
   install.packages("BiocManager")
-
-BiocManager::install(packages,
-                     # quiet = T,
-                     dependencies = T)
-
-lapply(packages,
-       library,
-       character.only = T,
-       logical.return = T)
-
-rm(list = ls())
+  packages_setup()
+  rm(list = ls())
+} else{
+  packages_setup()
+  rm(list = ls())
+}
 
 
-
-## IMPORTANT FUNCTIONS
+## SUPPORT FUNCTIONS
 
 # Create a output directory if it doesn't exist
 
 output_directory_check <-
-  function(x) {
+  function(create_output_function) {
     if (file.exists("output")) {
-      x
+      create_output_function
       
     } else {
       dir.create("output")
-      x
+      create_output_function
     }
   }
